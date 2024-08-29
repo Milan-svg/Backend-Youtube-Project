@@ -13,7 +13,7 @@ app.use(express.json({limit: "16kb"})) // 1. Json data accept krne ke liye eg- f
 
 app.use(express.urlencoded({limit: "16kb"}))//2. url se data accept krne ke liye
 
-app.use(express.static) //3. Middleware hai.used to serve static files to the client (html/css/js/imgs/pdfs/etc) directly from our directory("public" in this case) instead of generating em via the server.  
+app.use(express.static("public")) //3. Middleware hai.used to serve static files to the client (html/css/js/imgs/pdfs/etc) directly from our directory("public" in this case) instead of generating em via the server.  
 
 app.use(cookieParser())
 
