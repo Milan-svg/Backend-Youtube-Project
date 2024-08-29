@@ -11,13 +11,19 @@ app.use(cors({
 
 app.use(express.json({limit: "16kb"})) // 1. Json data accept krne ke liye eg- form data,& uski limit
 
-app.use(express.urlencoded({limit: "16kb"}))//2.ab url se data accept krne ke liye
+app.use(express.urlencoded({limit: "16kb"}))//2. url se data accept krne ke liye
 
-app.use(express.static) //3. Middleware hai.used to serve static files to the client (html/css/js/imgs/pdfs/etc) directly from our directory("public" in this case) instead of generating em via the server. reduces server load, and less complexity cause less routes are written.
+app.use(express.static) //3. Middleware hai.used to serve static files to the client (html/css/js/imgs/pdfs/etc) directly from our directory("public" in this case) instead of generating em via the server.  
 
-app.use(cookieParser())//4. used this so mai apne server se user ke browser ki cookies access kar pau, and set bhi kar pau
+app.use(cookieParser())
 
 
+//Routes import
+import userRouter from './routes/user.routes.js';
+
+//Routes Declaration
+
+app.use("/api/v1/users", userRouter)  ///api/v1/users load hote hi controll userRouter(user.routes) pe aajyega. then we can further write operations for "/users/x" mtlb /users ab prefix hogya. (see user.routes)
 
 
 
