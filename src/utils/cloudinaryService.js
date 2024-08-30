@@ -1,6 +1,5 @@
 // file hamare server pe upload ho chuki hai, uska local paath leke hum cloudinary ko pass krdenge.
 import { v2 as cloudinary } from 'cloudinary';
-import { response } from 'express';
 import fs from 'fs'
 
 // Configuration
@@ -17,9 +16,8 @@ const cloudinaryUpload = async (localFilePath)=>{
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "auto"
         })
-        //file upload ho gyi
         console.log("file uploaded on cloudinary!", response.url);
-        return response;
+        return response ;
 
     } catch (error) {
         fs.unlinkSync(localFilePath) // kyuki upload fail hogya, we remove the remaining local temp file.
