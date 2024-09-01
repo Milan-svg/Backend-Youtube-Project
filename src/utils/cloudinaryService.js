@@ -16,10 +16,12 @@ const cloudinaryUpload = async (localFilePath)=>{
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "auto"
         })
-        console.log("file uploaded on cloudinary!", response.url);
+        //console.log("file uploaded on cloudinary!", response.url);
+        fs.unlinkSync(localFilePath)
         return response ;
 
     } catch (error) {
+        console.log("Cloudinary Upload Error:" , error)
         fs.unlinkSync(localFilePath) // kyuki upload fail hogya, we remove the remaining local temp file.
         return null; 
     }
