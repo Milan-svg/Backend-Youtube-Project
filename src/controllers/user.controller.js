@@ -4,6 +4,22 @@ import {user} from "../models/user.model.js"
 import {cloudinaryUpload} from '../utils/cloudinaryService.js'
 import { ApiResponse } from "../utils/apiResponse.js";
 
+
+const generateAccessAndRefreshTokens = async (userId)=> {             
+    try {
+        const User = await user.findById(userId)        //User object bnaya from user.findbyid krke, access/refresh token return krwadiya
+        const accessToken = await User.generateAcessToken()
+        const refreshToken = await User.generateRefreshToken()
+
+        User.refreshToken = refreshToken
+        await User.save({validateBeforeSave: false})
+
+        return {accessToken, refreshToken}
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while generating refresh/access tokens")
+    }
+
+}
 const registerUser = asyncHandler( async (req,res) =>{
     //1. get user details from frontend, abhi postman se
     //2. data validate krenge- not empty
@@ -17,7 +33,7 @@ const registerUser = asyncHandler( async (req,res) =>{
     //9. return response. 
 
     const {fullname, email, username, password} = req.body      // 1.
-    console.log("email:", email);
+
     if(                                                         //2.
         [fullname, email, username, password].some(
             (field)=>field?.trim() === "" )
@@ -75,9 +91,84 @@ const registerUser = asyncHandler( async (req,res) =>{
 
 })
 
+const loginUser = asyncHandler(async (req, res)=> {
+    //1. req. body se data lena
+    //2. username/email check kro
+    //3. find the user, ki req body me aa bhi rha ya ni
+    //4. agar user milta, password check.
+    //5. if password correct, generate access/refrsh tokn 
+    //6. and send it to user via cookies
+
+    const {email, username, password} = req.body
+    if(!username || !email){
+        throw new ApiError(400, "email or username is required")
+    }
+    const foundUser = user.findOne({
+        $or: [{username} , {email}]
+    })
+    if(!foundUser){
+        throw new ApiError(404, "User not found")
+    }
+    const isMatch = await foundUser.isPasswordCorrect(password)
+    if(!isMatch){
+        throw new ApiError(401, "password invalid")
+    }
+   const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(foundUser._id)
+
+   const loggedInUser = await user.findById(foundUser._id).select(" -password -refreshToken ")
+   // options is an object for our cookies, httponly, secure true h so that cookies are editable only from our server.
+   const options = {  
+    httpOnly: true,
+    secure: true
+   }
+   return res
+   .status(200).cookie("accessToken" , accessToken , options)
+   .cookie("refreshToken", refreshToken, options)
+   .json(
+    new ApiResponse(200,
+        {                                   //aise obj send krne ke liye we used "data" in ApiResponse.
+            user: loggedInUser, accessToken, refreshToken    
+        }, "Login Succesfull!")
+   )
+
+
+})
+
+const logoutUser = asyncHandler(async (req,res)=>{
+    await user.findByIdAndUpdate(
+        req.loggedInUser._id,
+        {
+            $set:{
+                refreshToken: undefined
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken" , options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User Logged Out"))
+
+})
+
+
 export {
     registerUser,
+    loginUser,
+    logoutUser
 }
+
+
+
 
 
 //asyncHandler is basically ek wrapper hai jo hamare sare async functions ka try-catch manage krleta hai, and next(err) use krke automatically next error handling middleware ko error pass krdeta hai.
