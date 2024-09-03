@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {loginUser, logoutUser, registerUser} from '../controllers/user.controller.js'
+import {loginUser, logoutUser, registerUser, refreshAccessToken} from '../controllers/user.controller.js'
 import {upload} from '../middlewares/multer.middleware.js'
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -20,8 +20,10 @@ router.route("/register").post(
     registerUser) 
 
 router.route("/login").post(loginUser)
+//secured routes
 
 router.route("/logout").post(verifyJWT, logoutUser)
+router.route("/refresh-token").post(refreshAccessToken)
 
 
 //app.use("/api/v1/users", userRouter) use krke hum yaha aagye, now //users/register ke liye we have this. registerUser is a controller we defined in user.controller file.

@@ -3,6 +3,7 @@ import {ApiError} from '../utils/apiError.js'
 import {user} from "../models/user.model.js"
 import {cloudinaryUpload} from '../utils/cloudinaryService.js'
 import { ApiResponse } from "../utils/apiResponse.js";
+import jwt from "jsonwebtoken";
 
 
 const generateAccessAndRefreshTokens = async (userId)=> {             
@@ -100,10 +101,10 @@ const loginUser = asyncHandler(async (req, res)=> {
     //6. and send it to user via cookies
 
     const {email, username, password} = req.body
-    if(!username || !email){
+    if(!(username || email)){
         throw new ApiError(400, "email or username is required")
     }
-    const foundUser = user.findOne({
+    const foundUser = await user.findOne({
         $or: [{username} , {email}]
     })
     if(!foundUser){
@@ -160,11 +161,52 @@ const logoutUser = asyncHandler(async (req,res)=>{
 
 })
 
+const refreshAccessToken = asyncHandler(async (req,res) => {
+    // incoming token ko decode kiya, usse user obj nikala, nikale hue user ki refreshtoken ko incoming token se compare kiya
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if(!incomingRefreshToken){
+        throw new ApiError(401, "Unauthorized Request")
+    }
+
+   try {
+     const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+     
+     const loggedInUser = await user.findById(decodedToken?._id)
+     if(!loggedInUser){
+         throw new ApiError(401, "invalid refresh token")
+     }
+ 
+     if(incomingRefreshToken!== loggedInUser?.refreshToken){
+         throw new ApiError(401, "invalid refresh token")
+     }
+     const options = {
+         httpOnly: true,
+         secure: true
+     }
+     const {accessToken, newRefreshToken} = await generateAccessAndRefreshTokens(loggedInUser._id)
+ 
+     return res
+     .status(200)
+     .cookie("accessToken",accessToken, options)
+     .cookie("refreshToken", newRefreshToken, options)
+     .json(
+         new ApiResponse(200, {accessToken, refreshToken : newRefreshToken}, "Access token refreshed succesfully!")
+     )
+   } catch (error) {
+    throw new ApiError(401, error?.message || "invalid refresh token")
+   }
+
+    
+
+    //toh baically incoming token ko decode krke user object nikala, now since login dete waqt we provide the user object with refresh and accesstoken, we compare user.refreshtoken (jo hamare database me hai) WITH incoming token.
+});
 
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAccessToken
 }
 
 
