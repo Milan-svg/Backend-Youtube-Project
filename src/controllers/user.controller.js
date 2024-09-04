@@ -200,13 +200,125 @@ const refreshAccessToken = asyncHandler(async (req,res) => {
     
 
     //toh baically incoming token ko decode krke user object nikala, now since login dete waqt we provide the user object with refresh and accesstoken, we compare user.refreshtoken (jo hamare database me hai) WITH incoming token.
-});
+})
 
+const changeCurrentPassword = asyncHandler(async(req,res) => {
+    const {oldPassword , newPassword} = req.body
+    const currentUser = await user.findById(req.loggedInUser._id)
+    const isPassCorrect = await currentUser.isPasswordCorrect(oldPassword)
+
+    if(!isPassCorrect){
+        throw new ApiError(400, "Invalid Password")
+    }
+    currentUser.password = newPassword
+    await currentUser.save({validateBeforeSave: false}) // IMP-- save krna mt bhoolna
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, {},"Password changed succesfully ")
+    )
+})
+
+const getCurrentUser = asyncHandler( async(req,res) => {
+    return res
+    .status(200)
+    .json( new ApiResponse(200, req.loggedInUser , "current user fetched succesfully"))
+})
+
+const updateAccountDetails = asyncHandler(async(req,res)=>{
+
+    const {fullname, email} = req.body
+
+    if(!fullname || !email){
+        throw new ApiError(400, "All fields are required")
+    }
+    const currentUser = user.findByIdAndUpdate(
+        req.loggedInUser._id,
+        {
+            $set:{
+                fullname : fullname,
+                email: email
+            }
+        },
+        { new: true  }
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, currentUser , "Account details updated successfully"))
+
+    // WHY WE CANT DIRECTLY USE req.loggedInUser TO UPDATE INFO IN OUR DATABASE
+
+    //agar database ke user object me koi bhi change krna ho, we HAVE to make a database call (like const user = await user.findbyID). Directly req.loggedInUser ko modify nahi kar sakte, cause thats just is a reference to the user object stored in memory (i.e., it's retrieved from the session, token, or middleware). Modifying this object directly will only change the in-memory representation of the user data within the current request, naaki the actual database object!!
+
+    //By using this method, we're skipping the need to retrieve the user, modify it, and then call save. Instead, the update happens directly in the database.
+})
+
+const updateUserAvatar = asyncHandler(async(req,res)=>{
+    const avatarLocalPath = req.file?.path
+    if(!avatarLocalPath){
+        throw new ApiError(400, "avatar file is missing")
+    }
+    //cloudinary se file delete bhi krni hogi-- TODO
+    const avatar = await cloudinaryUpload(avatarLocalPath)
+    if(!avatar.url){
+        throw new ApiError(400, "Error while uploading avatar")
+    }
+    const currentUser = await user.findByIdAndUpdate(
+        req.loggedInUser._id,
+        {
+            $set:{
+                avatar : avatar.url
+            }
+        },
+        {new: true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, currentUser , "avatar updated successfully")
+    )
+})
+
+const updateUserCoverImage = asyncHandler(async(req,res)=>{
+    const coverImageLocalPath = req.file?.path
+    if(!coverImageLocalPath){
+        throw new ApiError(400, "cover image file missing")
+    }
+
+    const coverImage = await cloudinaryUpload(coverImageLocalPath)
+    if(!coverImage.url){
+        throw new ApiError(400, "error while uploading coverImage")
+    }
+
+    const currentUser = await user.findByIdAndUpdate(
+        req.loggedInUser._id,
+        {
+            $set:{
+                coverImage : coverImage.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, currentUser , "coverImage updated successfully")
+    )
+})
 export {
     registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage
 }
 
 

@@ -26,11 +26,12 @@ export const verifyJWT = asyncHandler(async (req,res,next) => {
         req.loggedInUser = loggedInUser;
         next()
     } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid Access TOken")
+        throw new ApiError(401, error?.message || "Invalid Access Token")
     }
 
 })
 
+// token leke current user ka object (just a reference of the database's user obj ) bhej dere hai req me. (excluding the password and refreshtkn)
 
 
 
