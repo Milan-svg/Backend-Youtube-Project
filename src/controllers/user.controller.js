@@ -4,6 +4,7 @@ import {user} from "../models/user.model.js"
 import {cloudinaryUpload} from '../utils/cloudinaryService.js'
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 
 const generateAccessAndRefreshTokens = async (userId)=> {             
@@ -309,6 +310,121 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
         new ApiResponse(200, currentUser , "coverImage updated successfully")
     )
 })
+
+const getUserChannelProfile = asyncHandler(async(req,res)=>{
+    const {username} = req.params
+
+    if(!username?.trim()){
+        throw new ApiError(400, "username not found")
+    }
+    const channel = await user.aggregate([
+        {
+            $match:{
+                username: username
+            }
+        }, //ab find krnge ki is user/username ke subscribers kitne hai
+        {
+            // search user as a channel (user ki id ko channels me search krenge, cause channel itself is a collection of users), so that we can get number of subscribers. (search krne par we'll get AN ARRAY OF multiple documents with -- channel(user) constant and other field being subscribers) , toh number of documents == number of subscribers, cause channel toh same hai. This ARRAY is being called "subscribers" here (as:). ye array user/channel ke document me add ho jayega.
+            $lookup:{
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        },
+        {
+            // here were searching the user's _id in subscriber field. we'll get multiple documents with the subscriber field constant (equal to user's _id) , and other field being channels. number of documents found === number of channels the user has subscribed to.
+            $lookup:{
+                from:"subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "channelsSubscribedTo"
+            }
+        },
+        {
+            // idhar we've added two fields in the user document model. w the fields being the number of subscribers of the user, and number of channels the user has subscribed to.
+            $addFields:{
+                subscriberCount:{
+                    $size: "$subscribers"
+                },
+                channelsSubscribedToCount:{
+                    $size: "$channelsSubscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        // if me ye dekhenge ki displayed user ke jo subscribers aaye hai, usme mai hu ya nhi.
+                        if:{ $in: [req.loggedInUser?._id , "$subscribers.subscriber"] },
+                        //he documents in the subscribers array have a field called subscriber, which is the ObjectId of the user who is subscribed to the channel.
+                        then: true,
+                        else: false
+                    }
+                }
+
+            }
+        },
+        {
+            $project:{
+                fullname:1,
+                username:1,
+                subscriberCount:1,
+                channelsSubscribedToCount:1,
+                isSubscribed:1,
+                avatar:1,
+                coverImage:1
+            }
+        }
+
+    ])
+
+    if(!channel?.length){
+        throw new ApiError(404, "Channel not found")
+    }
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, channel[0], "channel fetched succesfully")
+    )
+})
+
+const getWatchHistory = asyncHandler(async(req,res) =>{
+    const currentUser = await user.aggregate([
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(req.loggedInUser._id)
+            }
+        },
+        {
+            $lookup:{
+                //When you use lookup with _id as the foreignField, the watchHistory join will contain the whole video documents, not just the _id values. The lookup operation is designed to retrieve the full documents from the videos collection that match the localField values.
+                //For each ObjectId in the watchHistory field of the user document, the lookup will fetch the entire document from the videos collection that matches the corresponding _id.
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline:[
+                    {
+                        $lookup:{
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline:[
+                                {
+                                    $project:{
+                                        username:1,
+                                        fullname:1,
+                                        avatar:1
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+
+    ])
+})
 export {
     registerUser,
     loginUser,
@@ -318,26 +434,27 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory
 }
 
 
 
 
 
-//asyncHandler is basically ek wrapper hai jo hamare sare async functions ka try-catch manage krleta hai, and next(err) use krke automatically next error handling middleware ko error pass krdeta hai.
+/*asyncHandler is basically ek wrapper hai jo hamare sare async functions ka try-catch manage krleta hai, and next(err) use krke automatically next error handling middleware ko error pass krdeta hai.
 
-// asyncHandler ke bina we'd write the code like:
+asyncHandler ke bina we'd write the code like:
 
-// const registerUser = async (req, res, next) => {
-//     try {
-//         res.status(200).json({
-//             message: "ok"
-//         });
-//     } catch (err) {
-//         // Forward the error to the next middleware (error-handling middleware)
-//         next(err);
-//     }
-// };
-
-//idhar manually try catch etc use krna pdega whenever we write an async code in the project
+const registerUser = async (req, res, next) => {
+    try {
+        res.status(200).json({
+            message: "ok"
+        });
+    } catch (err) {
+        // Forward the error to the next middleware (error-handling middleware)
+        next(err);
+    }
+};
+idhar manually try catch etc use krna pdega whenever we write an async code in the project*/
