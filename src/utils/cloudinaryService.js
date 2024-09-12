@@ -27,4 +27,22 @@ const cloudinaryUpload = async (localFilePath)=>{
     }
 }
 
-export {cloudinaryUpload}
+const cloudinaryThumbnail =  (videoPublicId) =>{
+    if(!videoPublicId) return null
+    const thumbnailUrl = cloudinary.url(videoPublicId, {
+        resource_type: 'video',
+        format: 'jpg',
+        transformation: { width: 300, height: 300, crop: 'thumb', gravity: 'auto' },
+      })
+    return thumbnailUrl;
+}
+
+const cloudinaryFileDelete = async (PublicId)=>{
+    try {
+        const deletionResult = await cloudinary.uploader.destroy(PublicId, { resource_type: 'video' })
+        return deletionResult
+    } catch (error) {
+        console.log("error while deleting the video", error)
+    }
+}
+export {cloudinaryUpload, cloudinaryThumbnail, cloudinaryFileDelete}

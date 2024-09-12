@@ -69,7 +69,7 @@ const registerUser = asyncHandler( async (req,res) =>{
         throw new ApiError(400 , "Avatar required!")
     }
 
-    const userObject = await user.create({                              //6, also await is imp
+    const userObject = await user.create({                              
         fullname,
         avatar: avatar.url,
         coverImage: coverImage?.url || "", // avatar validated but coverimage not,so ? lgaya
