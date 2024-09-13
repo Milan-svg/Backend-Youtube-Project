@@ -20,6 +20,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
        3. again, check if it exists,
        4. cloudinary se vid ka url leke well add it to our video object
        5. return a response */
+       
 
     const videoLocalPath = req.file?.path
     if(!videoLocalPath){
@@ -125,18 +126,18 @@ const deleteVideo = asyncHandler(async (req, res) => {
     const videoToDelete = await video.findById(videoId)
     const vidUrl = videoToDelete.videoFile
     //console.log(vidUrl)
-    const publicId = vidUrl.split('/').slice(-2).join('/').split('.')[0]
+    const publicId = vidUrl.split('/video/upload/')[1].split('.')[0];
     if(!publicId){
         throw new ApiError(500, "error while generating publicId from videoUrl")
     }
-    //console.log(publicId)
+    console.log(publicId)
 
     const cloudinaryDeletionResult = await cloudinaryFileDelete(publicId)
     if(!cloudinaryDeletionResult){
         throw new ApiError(500, "could not delete from cloudinary")
     }
     console.log(cloudinaryDeletionResult)
-    //await video.findByIdAndDelete(videoId)
+    await video.findByIdAndDelete(videoId)
     return res
     .status(200)
     .json(

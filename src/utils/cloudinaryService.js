@@ -39,7 +39,7 @@ const cloudinaryThumbnail =  (videoPublicId) =>{
 
 const cloudinaryFileDelete = async (PublicId)=>{
     try {
-        const deletionResult = await cloudinary.uploader.destroy(PublicId, { resource_type: 'video' })
+        const deletionResult = await cloudinary.uploader.destroy(PublicId, { resource_type: 'video' , type: 'authenticated'})
         return deletionResult
     } catch (error) {
         console.log("error while deleting the video", error)

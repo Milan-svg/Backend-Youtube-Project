@@ -21,12 +21,14 @@ app.use(cookieParser())
 //Routes import
 import userRouter from './routes/user.routes.js';
 import videoRoute from './routes/video.routes.js';
+import playlistRouter from './routes/playlist.routes.js';
 
 //Routes Declaration
 
 app.use("/api/v1/users", userRouter)  ///api/v1/users load hote hi controll userRouter(user.routes) pe aajyega. then we can further write operations for "/users/x" mtlb /users ab prefix hogya. (see user.routes)
 
-app.use("/api/v1/videos",videoRoute )
+app.use("/api/v1/videos",videoRoute)
+app.use("/api/v1/playlists", playlistRouter)
 
 
 
