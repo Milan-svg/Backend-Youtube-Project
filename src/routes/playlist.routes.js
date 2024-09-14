@@ -13,11 +13,12 @@ import  {
 const playlistRouter = Router()
 playlistRouter.use(verifyJWT)   
 
-playlistRouter.route("/create-playlist").post(createPlaylist)
+playlistRouter.route("/create").post(createPlaylist)
 playlistRouter.route("/user/:userId").get(getUserPlaylists)
 playlistRouter.route("/:playlistId").get(getPlaylistById).patch(updatePlaylist).delete(deletePlaylist)
 playlistRouter.route("/add/:videoId/:playlistId").patch(addVideoToPlaylist)
 playlistRouter.route("/remove/:videoId/:playlistId").patch(removeVideoFromPlaylist)
+
 
 export default playlistRouter
 

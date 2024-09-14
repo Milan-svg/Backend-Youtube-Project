@@ -6,18 +6,17 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 
 
 const createPlaylist = asyncHandler(async (req, res) => {
-    const {name, description} = req.body
+    const {name , description} = req.body
     /* 1. name description validate kro
        2. playlist create kro with the name, description, and owner
        3.  return a response.*/
-    if([name,description].some(
-        (field)=> field?.trim() === ""
-    )){
-        throw new ApiError(400, "all fields are required")
+    console.log(req.body)
+    if(!name?.trim()){
+        throw new ApiError(400, "name is required")
     }
     const Playlist = await playlist.create({
-        name,
-        description,
+        name: name,
+        description: description,
         owner: req.loggedInUser._id
     })
     if(!Playlist){

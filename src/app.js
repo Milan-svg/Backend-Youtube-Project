@@ -9,7 +9,7 @@ app.use(cors({
     credentials:true
 }))
 
-app.use(express.json({limit: "16kb"})) // 1. Json data accept krne ke liye eg- form data,& uski limit
+app.use(express.json({limit: "32kb"})) // 1. Json data accept krne ke liye eg- form data,& uski limit
 
 app.use(express.urlencoded({limit: "16kb"}))//2. url se data accept krne ke liye
 
@@ -22,13 +22,14 @@ app.use(cookieParser())
 import userRouter from './routes/user.routes.js';
 import videoRoute from './routes/video.routes.js';
 import playlistRouter from './routes/playlist.routes.js';
+import subRouter from './routes/subscription.routes.js';
 
 //Routes Declaration
 
-app.use("/api/v1/users", userRouter)  ///api/v1/users load hote hi controll userRouter(user.routes) pe aajyega. then we can further write operations for "/users/x" mtlb /users ab prefix hogya. (see user.routes)
-
+app.use("/api/v1/users", userRouter) 
 app.use("/api/v1/videos",videoRoute)
 app.use("/api/v1/playlists", playlistRouter)
+app.use("/api/v1/subscriptions", subRouter)
 
 
 
