@@ -25,7 +25,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
             {
                 channel: channelId.trim(),
                 subscriber: req.loggedInUser._id   
-            }
+            }   
         )
         if(!deleteSubscription){
             throw new ApiError(500, "error while deleting subscription document")

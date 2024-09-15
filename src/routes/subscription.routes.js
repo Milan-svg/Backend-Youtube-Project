@@ -9,6 +9,6 @@ import  {
 const subRouter = Router()
 subRouter.use(verifyJWT)
 subRouter.route("/c/:channelId").post(toggleSubscription).get(getUserChannelSubscribers)
-subRouter.route("/:subId").get(getSubscribedChannels)
+subRouter.route("/s/:subId").get(getSubscribedChannels)
 
 export default subRouter
